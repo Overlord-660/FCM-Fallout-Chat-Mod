@@ -2485,7 +2485,7 @@ async function handleConnection(ws: WebSocket, req: IncomingMessage): Promise<vo
 
 
 
-export { handleConnection, broadcast, broadcastMessageDeletion, broadcastReportAlert, broadcastChannelUpdate, getClientCount, initPubSub, disconnectByUserId, markClientMuted, notifyAndDisconnect, broadcastToUsers };
+export { handleConnection, broadcast, broadcastMessageDeletion, broadcastReportAlert, broadcastChannelUpdate, getClientCount, initPubSub, disconnectByUserId, markClientMuted, notifyAndDisconnect };
 // The manual module.exports assignment OVERWRITES the ESM exports that
 // tsc compiles to `exports.X = ...` above — so every name needed for
 // CJS require() interop MUST be listed here. Missed names produce
