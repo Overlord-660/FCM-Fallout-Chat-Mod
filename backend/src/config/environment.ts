@@ -1,7 +1,21 @@
 import * as dotenv from 'dotenv';
 import { existsSync } from 'fs';
+const runtimeEnvBeforeDotenv = { ...process.env };
+
+export function applyRuntimeEnvPrecedence(
+  runtimeEnv: NodeJS.ProcessEnv,
+  loadedEnv: NodeJS.ProcessEnv,
+): NodeJS.ProcessEnv {
+  const merged: NodeJS.ProcessEnv = { ...loadedEnv };
+  for (const [key, value] of Object.entries(runtimeEnv)) {
+    if (value !== undefined) merged[key] = value;
+  }
+  return merged;
+}
+
 dotenv.config();
 if (existsSync('.env.local')) dotenv.config({ path: '.env.local', override: true });
+Object.assign(process.env, applyRuntimeEnvPrecedence(runtimeEnvBeforeDotenv, process.env));
 
 export interface Environment {
   NODE_ENV: string;
@@ -429,4 +443,5 @@ export default env;
 (env as unknown as Record<string, unknown>).hudIdentitySecretGuardFails = hudIdentitySecretGuardFails;
 (env as unknown as Record<string, unknown>).DEV_DEFAULT_HUD_IDENTITY_SECRET = DEV_DEFAULT_HUD_IDENTITY_SECRET;
 (env as unknown as Record<string, unknown>).collectMinioProductionErrors = collectMinioProductionErrors;
+(env as unknown as Record<string, unknown>).applyRuntimeEnvPrecedence = applyRuntimeEnvPrecedence;
 module.exports = env;
