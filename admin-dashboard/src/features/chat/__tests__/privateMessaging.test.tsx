@@ -190,7 +190,7 @@ describe('ChatOverlay private messaging', () => {
     globalThis.WebSocket = realWebSocket;
   });
 
-  it('renders the PM tab and inbox without avatars', async () => {
+  it('renders sender-aware PM inbox previews without avatars', async () => {
     const { container } = renderOverlay({ id: 'user-me', username: 'You', role: 'user' });
     await screen.findByText('PM');
 
@@ -204,6 +204,7 @@ describe('ChatOverlay private messaging', () => {
               otherUserId: 'user-other',
               otherDisplayName: 'Stealthmog',
               lastMessagePreview: 'meet at whitespring?',
+              lastMessageSenderId: 'user-other',
               lastMessageAt: '2026-06-25T15:53:00.000Z',
               unreadCount: 2,
             },
@@ -216,7 +217,25 @@ describe('ChatOverlay private messaging', () => {
     expect(await screen.findByPlaceholderText('Search users...')).toBeTruthy();
     expect(screen.getByText('INBOX')).toBeTruthy();
     expect(screen.getByText('Stealthmog')).toBeTruthy();
+    expect(screen.getByText('Stealthmog: meet at whitespring?')).toBeTruthy();
     expect(container.querySelector('[data-pm-inbox="true"] img')).toBeNull();
+
+    await act(async () => {
+      emitWs({
+        type: 'pm:message',
+        payload: {
+          id: 'pm-3',
+          conversationId: 'conv-1',
+          senderId: 'user-me',
+          senderName: 'LocalDevLT',
+          recipientId: 'user-other',
+          content: 'omw',
+          createdAt: '2026-06-25T15:54:00.000Z',
+        },
+      });
+    });
+
+    expect(await screen.findByText('You: omw')).toBeTruthy();
   });
 
   it('opens a private conversation and returns to inbox', async () => {
@@ -233,6 +252,7 @@ describe('ChatOverlay private messaging', () => {
               otherUserId: 'user-other',
               otherDisplayName: 'Stealthmog',
               lastMessagePreview: 'meet at whitespring?',
+              lastMessageSenderId: 'user-other',
               lastMessageAt: '2026-06-25T15:53:00.000Z',
               unreadCount: 2,
             },
@@ -272,6 +292,7 @@ describe('ChatOverlay private messaging', () => {
               otherUserId: 'user-other',
               otherDisplayName: 'Stealthmog',
               lastMessagePreview: 'meet at whitespring?',
+              lastMessageSenderId: 'user-other',
               lastMessageAt: '2026-06-25T15:53:00.000Z',
               unreadCount: 2,
             },

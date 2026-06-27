@@ -1201,6 +1201,7 @@ interface PrivateConversationSummary {
   otherUserId: string;
   otherDisplayName: string;
   lastMessagePreview: string;
+  lastMessageSenderId?: string;
   lastMessageAt: string;
   unreadCount: number;
 }
@@ -1265,6 +1266,21 @@ function toPrivateChatMessage(message: PrivateMessagePayload): ChatMessage {
     source: 'pm',
     timestamp: message.createdAt,
   };
+}
+
+function formatPrivateConversationPreview(
+  conversation: PrivateConversationSummary,
+  messages: ChatMessage[] | undefined,
+  currentUserId: string,
+): string {
+  const latestMessage = messages && messages.length > 0 ? messages[messages.length - 1] : null;
+  const previewText = latestMessage?.content ?? conversation.lastMessagePreview;
+  if (!previewText) return '';
+
+  const senderId = latestMessage?.userId ?? conversation.lastMessageSenderId;
+  if (senderId === currentUserId) return `You: ${previewText}`;
+  if (senderId && senderId === conversation.otherUserId) return `${conversation.otherDisplayName}: ${previewText}`;
+  return previewText;
 }
 
 interface Party {
@@ -4748,7 +4764,13 @@ export default function ChatOverlay() {
                 const nextConversations = Array.isArray(frame.payload?.conversations)
                   ? frame.payload.conversations as PrivateConversationSummary[]
                   : [];
-                setPrivateConversations(nextConversations);
+                setPrivateConversations(prev => {
+                  const prevById = new Map(prev.map(conversation => [conversation.conversationId, conversation] as const));
+                  return nextConversations.map(conversation => ({
+                    ...conversation,
+                    lastMessageSenderId: conversation.lastMessageSenderId ?? prevById.get(conversation.conversationId)?.lastMessageSenderId,
+                  }));
+                });
                 if (typeof frame.payload?.openedConversationId === 'string') {
                   setActiveMainId(PM_MAIN_ID);
                   setPmView(frame.payload.openedConversationId);
@@ -4761,10 +4783,17 @@ export default function ChatOverlay() {
                   ? (frame.payload.messages as PrivateMessagePayload[]).map(toPrivateChatMessage)
                   : [];
                 if (conversationId) {
+                  const latestMessage = incoming.length > 0 ? incoming[incoming.length - 1] : null;
                   setPrivateMessages(prev => ({ ...prev, [conversationId]: incoming }));
                   setPrivateConversations(prev => prev.map(conversation =>
                     conversation.conversationId === conversationId
-                      ? { ...conversation, unreadCount: 0 }
+                      ? {
+                        ...conversation,
+                        unreadCount: 0,
+                        lastMessagePreview: latestMessage?.content ?? conversation.lastMessagePreview,
+                        lastMessageSenderId: latestMessage?.userId ?? conversation.lastMessageSenderId,
+                        lastMessageAt: latestMessage?.timestamp ?? conversation.lastMessageAt,
+                      }
                       : conversation,
                   ));
                 }
@@ -4794,6 +4823,7 @@ export default function ChatOverlay() {
                       ? (existing?.otherDisplayName ?? 'Wanderer')
                       : payload.senderName,
                     lastMessagePreview: payload.content,
+                    lastMessageSenderId: payload.senderId,
                     lastMessageAt: payload.createdAt,
                     unreadCount,
                   };
@@ -7057,7 +7087,11 @@ export default function ChatOverlay() {
                 whiteSpace: 'nowrap',
                 textShadow: textOutline,
               }}>
-                {conversation.lastMessagePreview}
+                {formatPrivateConversationPreview(
+                  conversation,
+                  privateMessages[conversation.conversationId],
+                  user?.id ?? '',
+                )}
               </div>
             </div>
           ))
