@@ -7066,9 +7066,7 @@ export default function ChatOverlay() {
     );
   }
 
-  const inputPlaceholder = isOnPmTab && activePmConversation
-    ? `Message ${activePmConversation.otherDisplayName} privately...`
-    : 'Type a message...';
+  const inputPlaceholder = 'Type a message...';
   const showComposer = !isPublicMode
     && !adminFeedActive
     && (!isOnPartyTab || partyView !== 'browser')
@@ -7076,7 +7074,9 @@ export default function ChatOverlay() {
 
   const normalFeedRows = useMemo(() =>
               visibleMessages.map(msg => {
-                const displayName = resolveUsername(msg);
+                const displayName = isOnPmTab && msg.userId && msg.userId === (user?.id ?? '')
+                  ? 'You'
+                  : resolveUsername(msg);
                 // ── Party-invite embed ──────────────────────────────────────
                 // Public-invitation messages carry metadata.type === 'party_invite'.
                 // Render a styled embed with a Join button instead of plain text.

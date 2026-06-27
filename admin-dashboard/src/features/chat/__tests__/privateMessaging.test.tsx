@@ -67,7 +67,7 @@ class FakeWebSocket {
                   id: 'pm-2',
                   conversationId,
                   senderId: 'user-me',
-                  senderName: 'You',
+                  senderName: 'LocalDevLT',
                   recipientId: 'user-other',
                   content: 'omw',
                   createdAt: '2026-06-25T15:52:30.000Z',
@@ -220,7 +220,7 @@ describe('ChatOverlay private messaging', () => {
   });
 
   it('opens a private conversation and returns to inbox', async () => {
-    renderOverlay({ id: 'user-me', username: 'You', role: 'user' });
+    renderOverlay({ id: 'user-me', username: 'LocalDevLT', role: 'user' });
     await screen.findByText('PM');
 
     await act(async () => {
@@ -246,8 +246,12 @@ describe('ChatOverlay private messaging', () => {
 
     expect(await screen.findByText('< BACK TO INBOX')).toBeTruthy();
     expect(screen.getByText('PRIVATE - Only you and Stealthmog can see this conversation.')).toBeTruthy();
-    expect(screen.getByText('meet at whitespring?')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Type a message...')).toBeTruthy();
+    expect(await screen.findByText('meet at whitespring?')).toBeTruthy();
     expect(screen.getByText('omw')).toBeTruthy();
+    expect(screen.getByText(/Stealthmog:/)).toBeTruthy();
+    expect(screen.getByText(/You:/)).toBeTruthy();
+    expect(screen.queryByText(/LocalDevLT:/)).toBeNull();
 
     fireEvent.click(screen.getByText('< BACK TO INBOX'));
     expect(await screen.findByPlaceholderText('Search users...')).toBeTruthy();
