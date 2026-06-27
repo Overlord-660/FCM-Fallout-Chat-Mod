@@ -245,7 +245,8 @@ describe('ChatOverlay private messaging', () => {
     fireEvent.click(await screen.findByText('Stealthmog'));
 
     expect(await screen.findByText('< BACK TO INBOX')).toBeTruthy();
-    expect(screen.getByText('PRIVATE - Only you and Stealthmog can see this conversation.')).toBeTruthy();
+    expect(screen.getByText('Stealthmog')).toBeTruthy();
+    expect(screen.queryByText('PRIVATE - Only you and Stealthmog can see this conversation.')).toBeNull();
     expect(screen.getByPlaceholderText('Type a message...')).toBeTruthy();
     expect(await screen.findByText('meet at whitespring?')).toBeTruthy();
     expect(screen.getByText('omw')).toBeTruthy();

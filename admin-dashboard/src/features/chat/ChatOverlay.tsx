@@ -8196,10 +8196,11 @@ export default function ChatOverlay() {
                   </div>
                   <div style={{
                     color: hexAlpha(primaryColor, 0.92),
-                    fontSize: `${Math.max(10, fontSize - 1)}px`,
+                    fontSize: `${Math.max(11, fontSize)}px`,
+                    fontWeight: 'bold',
                     textShadow: textOutline,
                   }}>
-                    PRIVATE - Only you and {activePmConversation.otherDisplayName} can see this conversation.
+                    {activePmConversation.otherDisplayName}
                   </div>
                 </div>
               )}
