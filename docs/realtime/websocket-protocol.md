@@ -265,6 +265,7 @@ Requests the caller's private-message inbox. The server responds with `payload.c
         "otherUserId": "<uuid>",
         "otherDisplayName": "Stealthmog",
         "lastMessagePreview": "meet at whitespring?",
+        "lastMessageSenderId": "<uuid>",
         "lastMessageAt": "2026-06-25T15:53:00.000Z",
         "unreadCount": 2
       }
@@ -272,6 +273,8 @@ Requests the caller's private-message inbox. The server responds with `payload.c
   }
 }
 ```
+
+`lastMessageSenderId` is the user id of the most recent non-deleted private message in the conversation, or `null` when the conversation exists but has no messages yet.
 
 `pm:open` reuses the same response frame and adds `openedConversationId` when the server creates or finds the target conversation.
 

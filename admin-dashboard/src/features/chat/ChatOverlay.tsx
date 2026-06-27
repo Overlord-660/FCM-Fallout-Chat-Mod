@@ -1201,7 +1201,7 @@ interface PrivateConversationSummary {
   otherUserId: string;
   otherDisplayName: string;
   lastMessagePreview: string;
-  lastMessageSenderId?: string;
+  lastMessageSenderId: string | null;
   lastMessageAt: string;
   unreadCount: number;
 }
@@ -4764,13 +4764,7 @@ export default function ChatOverlay() {
                 const nextConversations = Array.isArray(frame.payload?.conversations)
                   ? frame.payload.conversations as PrivateConversationSummary[]
                   : [];
-                setPrivateConversations(prev => {
-                  const prevById = new Map(prev.map(conversation => [conversation.conversationId, conversation] as const));
-                  return nextConversations.map(conversation => ({
-                    ...conversation,
-                    lastMessageSenderId: conversation.lastMessageSenderId ?? prevById.get(conversation.conversationId)?.lastMessageSenderId,
-                  }));
-                });
+                setPrivateConversations(nextConversations);
                 if (typeof frame.payload?.openedConversationId === 'string') {
                   setActiveMainId(PM_MAIN_ID);
                   setPmView(frame.payload.openedConversationId);
@@ -6969,11 +6963,17 @@ export default function ChatOverlay() {
   const filteredPrivateConversations = useMemo(() => {
     const term = pmSearch.trim().toLowerCase();
     if (!term) return privateConversations;
-    return privateConversations.filter(conversation =>
-      conversation.otherDisplayName.toLowerCase().includes(term)
-      || conversation.lastMessagePreview.toLowerCase().includes(term),
-    );
-  }, [privateConversations, pmSearch]);
+    return privateConversations.filter(conversation => {
+      const formattedPreview = formatPrivateConversationPreview(
+        conversation,
+        privateMessages[conversation.conversationId],
+        user?.id ?? '',
+      ).toLowerCase();
+      return conversation.otherDisplayName.toLowerCase().includes(term)
+        || conversation.lastMessagePreview.toLowerCase().includes(term)
+        || formattedPreview.includes(term);
+    });
+  }, [privateConversations, privateMessages, pmSearch, user?.id]);
 
   const privateSearchResults = useMemo(() => {
     const existingUserIds = new Set(privateConversations.map(conversation => conversation.otherUserId));
@@ -6986,7 +6986,7 @@ export default function ChatOverlay() {
         <input
           value={pmSearch}
           onChange={e => setPmSearch(e.target.value)}
-          placeholder="Search users..."
+          placeholder="Type to search..."
           style={{
             width: '100%',
             boxSizing: 'border-box',

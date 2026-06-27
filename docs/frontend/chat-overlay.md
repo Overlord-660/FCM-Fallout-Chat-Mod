@@ -128,8 +128,8 @@ forked component.
 
 - **Top-level tab:** `PM` sits beside `FALLOUT 76` and `PARTY`.
 - **Second row:** PM always renders a single `INBOX` tab. Per-user PM tabs are never added.
-- **Inbox view:** search box (`Search users...`), text-only conversation rows, no avatars, ordered by most-recent `lastMessageAt`, unread badge per row.
-- **Conversation view:** a `< BACK TO INBOX` row, a `PRIVATE` notice (`Only you and <name> can see this conversation.`), then the normal shared message renderer plus the normal 255-character composer/counter.
+- **Inbox view:** search box (`Type to search...`), text-only conversation rows, no avatars, ordered by most-recent `lastMessageAt`, unread badge per row, and a sender-prefixed preview (`You: <message>` when the current user sent the latest PM, otherwise `<OtherUserDisplayName>: <message>`). Inbox filtering matches the participant name, raw preview text, and the sender-prefixed preview text.
+- **Conversation view:** a `< BACK TO INBOX` row, then the other participant's display name as the header, followed by the normal shared message renderer plus the normal 255-character composer/counter.
 - **Composer routing:** when `activeMainId === PM_MAIN_ID` and `pmView !== 'inbox'`, Enter sends `pm:send` only. PM content never reuses `chat:send` or `party:send`.
 - **Context menu:** authenticated message rows add a `Message` item near the top. The label is exactly `Message`; it is hidden for self, missing `userId`, bots/system rows, and public mode.
 - **WebSocket state:** on connect the overlay requests `pm:list`; opening a conversation requests `pm:history`; incoming `pm:message` frames update the inbox summary and active thread in place; active-thread receives trigger `pm:read`.

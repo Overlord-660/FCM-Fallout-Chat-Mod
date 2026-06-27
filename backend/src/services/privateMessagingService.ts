@@ -124,6 +124,7 @@ function conversationSummaryForUser(
     otherUserId: other.id,
     otherDisplayName: resolveDisplayName(other),
     lastMessagePreview: lastMessage?.content ?? '',
+    lastMessageSenderId: lastMessage?.senderId ?? null,
     lastMessageAt: (conversation.lastMessageAt ?? lastMessage?.createdAt ?? conversation.createdAt).toISOString(),
     unreadCount,
   };

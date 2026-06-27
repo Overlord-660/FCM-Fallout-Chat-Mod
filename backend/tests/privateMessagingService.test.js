@@ -35,6 +35,7 @@ const {
 const {
   PrivateConversationAccessError,
   getPrivateHistory,
+  listPrivateConversations,
   sendPrivateMessage,
 } = require('../src/services/privateMessagingService');
 
@@ -136,6 +137,67 @@ describe('privateMessagingService', () => {
         recipientId: 'user-b',
         content: 'meet at whitespring?',
         createdAt: '2026-06-25T15:10:00.000Z',
+      },
+    ]);
+  });
+
+  it('includes lastMessageSenderId in private conversation summaries', async () => {
+    prismaMock.privateConversation.findMany.mockResolvedValue([
+      {
+        id: 'conv-1',
+        userAId: 'user-a',
+        userBId: 'user-b',
+        userALastReadAt: null,
+        userBLastReadAt: null,
+        lastMessageAt: new Date('2026-06-25T15:10:00.000Z'),
+        createdAt: new Date('2026-06-25T15:00:00.000Z'),
+        userA: { id: 'user-a', username: 'Sender', discordUsername: null, discordDisplayName: null },
+        userB: { id: 'user-b', username: 'Receiver', discordUsername: null, discordDisplayName: null },
+        messages: [
+          {
+            content: 'meet at whitespring?',
+            createdAt: new Date('2026-06-25T15:10:00.000Z'),
+            senderId: 'user-a',
+          },
+        ],
+      },
+      {
+        id: 'conv-2',
+        userAId: 'user-a',
+        userBId: 'user-c',
+        userALastReadAt: null,
+        userBLastReadAt: null,
+        lastMessageAt: null,
+        createdAt: new Date('2026-06-25T15:20:00.000Z'),
+        userA: { id: 'user-a', username: 'Sender', discordUsername: null, discordDisplayName: null },
+        userB: { id: 'user-c', username: 'ReceiverTwo', discordUsername: null, discordDisplayName: null },
+        messages: [],
+      },
+    ]);
+    prismaMock.privateMessage.count
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(0);
+
+    const conversations = await listPrivateConversations('user-a');
+
+    expect(conversations).toEqual([
+      {
+        conversationId: 'conv-1',
+        otherUserId: 'user-b',
+        otherDisplayName: 'Receiver',
+        lastMessagePreview: 'meet at whitespring?',
+        lastMessageSenderId: 'user-a',
+        lastMessageAt: '2026-06-25T15:10:00.000Z',
+        unreadCount: 1,
+      },
+      {
+        conversationId: 'conv-2',
+        otherUserId: 'user-c',
+        otherDisplayName: 'ReceiverTwo',
+        lastMessagePreview: '',
+        lastMessageSenderId: null,
+        lastMessageAt: '2026-06-25T15:20:00.000Z',
+        unreadCount: 0,
       },
     ]);
   });

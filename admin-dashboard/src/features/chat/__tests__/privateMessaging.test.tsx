@@ -208,34 +208,83 @@ describe('ChatOverlay private messaging', () => {
               lastMessageAt: '2026-06-25T15:53:00.000Z',
               unreadCount: 2,
             },
+            {
+              conversationId: 'conv-2',
+              otherUserId: 'user-friend',
+              otherDisplayName: 'LocalDevLT',
+              lastMessagePreview: 'omw',
+              lastMessageSenderId: 'user-me',
+              lastMessageAt: '2026-06-25T15:54:00.000Z',
+              unreadCount: 0,
+            },
           ],
         },
       });
     });
 
     fireEvent.click(screen.getByText('PM'));
-    expect(await screen.findByPlaceholderText('Search users...')).toBeTruthy();
+    expect(await screen.findByPlaceholderText('Type to search...')).toBeTruthy();
     expect(screen.getByText('INBOX')).toBeTruthy();
     expect(screen.getByText('Stealthmog')).toBeTruthy();
     expect(screen.getByText('Stealthmog: meet at whitespring?')).toBeTruthy();
+    expect(screen.getByText('You: omw')).toBeTruthy();
     expect(container.querySelector('[data-pm-inbox="true"] img')).toBeNull();
+  });
+
+  it('filters PM inbox conversations by name and sender-aware preview text', async () => {
+    renderOverlay({ id: 'user-me', username: 'You', role: 'user' });
+    await screen.findByText('PM');
 
     await act(async () => {
       emitWs({
-        type: 'pm:message',
+        type: 'pm:list',
         payload: {
-          id: 'pm-3',
-          conversationId: 'conv-1',
-          senderId: 'user-me',
-          senderName: 'LocalDevLT',
-          recipientId: 'user-other',
-          content: 'omw',
-          createdAt: '2026-06-25T15:54:00.000Z',
+          conversations: [
+            {
+              conversationId: 'conv-1',
+              otherUserId: 'user-other',
+              otherDisplayName: 'Stealthmog',
+              lastMessagePreview: 'meet at whitespring?',
+              lastMessageSenderId: 'user-other',
+              lastMessageAt: '2026-06-25T15:53:00.000Z',
+              unreadCount: 2,
+            },
+            {
+              conversationId: 'conv-2',
+              otherUserId: 'user-friend',
+              otherDisplayName: 'LocalDevLT',
+              lastMessagePreview: 'omw',
+              lastMessageSenderId: 'user-me',
+              lastMessageAt: '2026-06-25T15:54:00.000Z',
+              unreadCount: 0,
+            },
+          ],
         },
       });
     });
 
-    expect(await screen.findByText('You: omw')).toBeTruthy();
+    fireEvent.click(screen.getByText('PM'));
+    const search = await screen.findByPlaceholderText('Type to search...');
+
+    fireEvent.change(search, { target: { value: 'LocalDevLT' } });
+    expect(screen.getByText('LocalDevLT')).toBeTruthy();
+    expect(screen.getByText('You: omw')).toBeTruthy();
+    expect(screen.queryByText('Stealthmog')).toBeNull();
+
+    fireEvent.change(search, { target: { value: 'omw' } });
+    expect(screen.getByText('LocalDevLT')).toBeTruthy();
+    expect(screen.getByText('You: omw')).toBeTruthy();
+    expect(screen.queryByText('Stealthmog')).toBeNull();
+
+    fireEvent.change(search, { target: { value: 'You' } });
+    expect(screen.getByText('LocalDevLT')).toBeTruthy();
+    expect(screen.getByText('You: omw')).toBeTruthy();
+    expect(screen.queryByText('Stealthmog')).toBeNull();
+
+    fireEvent.change(search, { target: { value: 'unrelated text' } });
+    expect(screen.queryByText('LocalDevLT')).toBeNull();
+    expect(screen.queryByText('You: omw')).toBeNull();
+    expect(screen.queryByText('Stealthmog')).toBeNull();
   });
 
   it('opens a private conversation and returns to inbox', async () => {
@@ -275,7 +324,7 @@ describe('ChatOverlay private messaging', () => {
     expect(screen.queryByText(/LocalDevLT:/)).toBeNull();
 
     fireEvent.click(screen.getByText('< BACK TO INBOX'));
-    expect(await screen.findByPlaceholderText('Search users...')).toBeTruthy();
+    expect(await screen.findByPlaceholderText('Type to search...')).toBeTruthy();
   });
 
   it('shows an exact Message item in the username context menu', async () => {
