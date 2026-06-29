@@ -177,7 +177,12 @@ import messageQueue from '../queues/messagePersist';
 import logger from '../config/logger';
 import { incrementMessageCount, setFullscreenStatus, removeFullscreenClient } from '../controllers/healthController';
 import { tryHandleCommand } from '../services/commandService';
-import { getServerPlayers } from '../services/playerListService';
+import {
+  notePendingDisconnectSuppressed,
+  noteUserConnected,
+  noteUserDisconnected,
+  noteUserPendingDisconnect,
+} from '../services/onlinePresenceService';
 import { emojifyShortcodes } from '../utils/emoji';
 import { evaluateBuildGate } from '../services/buildLock';
 import { getActiveQaVersion } from '../services/activeQaVersion';
@@ -1415,12 +1420,15 @@ async function handleConnection(ws: WebSocket, req: IncomingMessage): Promise<vo
         logger.info({ userId: user.id, clientVersion: gate.clientVersion, activeQaVersion }, '[ws] rejecting outdated build');
         ws.close(WS_CLOSE_OUTDATED_BUILD, `OUTDATED_BUILD:${activeQaVersion || ''}`);
         clients.delete(token);
+        noteUserDisconnected(user.id);
         return;
       }
     } catch (err) {
       logger.warn({ err, userId: user.id }, '[ws] build-gate check failed; failing open');
     }
   }
+
+  noteUserConnected(user.id);
 
   // Broadcast room:join (user connected)
   broadcast({ type: 'room:join', payload: { username: displayName, timestamp: new Date().toISOString() } }, ws);
@@ -2199,9 +2207,11 @@ async function handleConnection(ws: WebSocket, req: IncomingMessage): Promise<vo
         }
         pendingDisconnect.delete(user.id);
         if (!stillGone) {
+          notePendingDisconnectSuppressed(user.id);
           logger.info({ userId: user.id, ep }, '[ws-flap] reconnected before timer fired — suppressing');
           return;
         }
+        noteUserDisconnected(user.id);
         fireDeferred(ep);
       }, WS_FLAP_GRACE_MS);
 
@@ -2212,7 +2222,10 @@ async function handleConnection(ws: WebSocket, req: IncomingMessage): Promise<vo
       });
     };
 
-    scheduleDeferred(closingEndpoint);
+    const enteredPresenceGrace = noteUserPendingDisconnect(user.id);
+    if (enteredPresenceGrace) {
+      scheduleDeferred(closingEndpoint);
+    }
     // Do NOT null serverEndpoint/alternateEndpoints/serverJoinedAt on close.
     // Backend deploys drop every WS in flight; clearing on each close caused
     // state loss across deploys (serverEndpoint nulled → reconnect's :3000
@@ -2238,6 +2251,7 @@ async function handleConnection(ws: WebSocket, req: IncomingMessage): Promise<vo
     if (!isSocketSuperseded(clients.get(token)?.ws, ws)) {
       clients.delete(token);
       removeFullscreenClient(user.id);
+      noteUserDisconnected(user.id);
     }
   });
 }
