@@ -236,19 +236,13 @@ async function buildOnlineResponse(
     getServerPlayersForUser(userId),
   ]);
 
-  const lines = [
-    'VAULT-TEC ONLINE STATUS',
-    '',
-    `Chat online: ${totalOnline}`,
-  ];
-
   const worldPlayerCount = worldPlayers?.players?.length ?? null;
-  if (worldPlayerCount !== null) {
-    lines.push(`Players in your world: ${worldPlayerCount}`);
-  }
+  const text = worldPlayerCount !== null
+    ? `${totalOnline} users online in chat. ${worldPlayerCount} players in your world.`
+    : `${totalOnline} users online in chat.`;
 
   return {
-    text: lines.join('\n'),
+    text,
     metadata: {
       type: 'online_status',
       totalOnline,

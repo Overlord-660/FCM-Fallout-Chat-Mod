@@ -58,8 +58,7 @@ describe('/online command', () => {
       targetChannelId: 'chan-1',
       metadata: { type: 'online_status', totalOnline: 42, worldPlayerCount: 3 },
     });
-    expect(result.botMessage).toContain('Chat online: 42');
-    expect(result.botMessage).toContain('Players in your world: 3');
+    expect(result.botMessage).toBe('42 users online in chat. 3 players in your world.');
     expect(mockGetGlobalOnlineCount).toHaveBeenCalledWith(7);
     expect(mockGetServerPlayersForUser).toHaveBeenCalledWith('user-1');
   });
@@ -75,8 +74,7 @@ describe('/online command', () => {
       actionType: 'private',
       metadata: { type: 'online_status', totalOnline: 5, worldPlayerCount: null },
     });
-    expect(result.botMessage).toContain('Chat online: 5');
-    expect(result.botMessage).not.toContain('Players in your world:');
+    expect(result.botMessage).toBe('5 users online in chat.');
   });
 
   test('lists /online in the built-in help output', async () => {
