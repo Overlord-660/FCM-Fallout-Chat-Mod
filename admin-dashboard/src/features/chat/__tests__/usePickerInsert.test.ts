@@ -30,26 +30,23 @@ describe('usePickerInsert', () => {
     expect(setInputText).toHaveBeenCalledWith('😀');
   });
 
-  it('inserts a second emoji after the first without reversing order', () => {
-    // Simulate state lag: el.value already has the first emoji (DOM is up to date)
-    // but the inputText prop passed to the hook is still the stale pre-insert value.
-    el.value = '😀 ';
-    el.selectionStart = 3;
-    el.selectionEnd = 3;
-
+  it('keeps sequential emoji picks in insertion order within the same act block', () => {
     const ref = { current: el };
     const setInputText = vi.fn();
-
-    // Pass stale inputText (empty string) -- the bug caused this to overwrite
-    // the first emoji rather than appending after it.
     const { result } = renderHook(() =>
       usePickerInsert(ref as any, '', setInputText),
     );
 
-    act(() => result.current('😂'));
+    act(() => {
+      result.current('😀');
+      result.current('😂');
+    });
 
-    // Should read el.value, not the stale '' prop
-    expect(setInputText).toHaveBeenCalledWith('😀 😂');
+    expect(setInputText).toHaveBeenNthCalledWith(1, '😀');
+    expect(setInputText).toHaveBeenNthCalledWith(2, '😀😂');
+    expect(el.value).toBe('😀😂');
+    expect(el.selectionStart).toBe('😀😂'.length);
+    expect(el.selectionEnd).toBe('😀😂'.length);
   });
 
   it('advances the textarea value and caret between rapid inserts', () => {

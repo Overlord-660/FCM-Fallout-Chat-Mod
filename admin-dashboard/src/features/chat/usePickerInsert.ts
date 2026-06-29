@@ -23,6 +23,8 @@ export function usePickerInsert(
       const clamped = next.slice(0, 255);
       const pos = Math.min(clamped.length, start + token.length);
 
+      // Keep the DOM textarea in sync immediately so rapid picker selections
+      // read the latest value/caret instead of the pre-update state.
       el.value = clamped;
       el.setSelectionRange(pos, pos);
       setInputText(clamped);
